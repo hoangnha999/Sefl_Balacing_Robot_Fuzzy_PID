@@ -1,5 +1,5 @@
 Xe hai bánh tự cân bằng
-Phần cứng:
+# Phần cứng:
  + Arduino Uno
  + MPU6050
  + GA25 Encoder
