@@ -389,7 +389,6 @@ void read_MPU6050(){
   accel_y = (Wire.read()<<8) | Wire.read();    // Trục Y
   accel_z = (Wire.read()<<8) | Wire.read();    // Trục Z
  
-  tempReading = (Wire.read()<<8) | Wire.read();    
 
   gyro_x = (Wire.read()<<8) | Wire.read();
   gyro_y = (Wire.read()<<8) | Wire.read();
@@ -407,37 +406,30 @@ gyro_y -= gyro_y_cal;
 gyro_z -= gyro_z_cal;
 
 angle_pitch += gyro_x * .0000611;   // Tính toán góc đã di chuyển trong khoảng thời gian 4ms vừa qua và cộng vào giá trị góc nghiêng
-angle_roll += gyro_y * .0000611;    // Tính toán góc đã di chuyển trong khoảng thời gian 4ms vừa qua và cộng vào giá trị góc cuộn
 
 //0.000001066 = 0.0000611 * (3.142(PI) / 180 độ) Hàm sin của Arduino sử dụng đơn vị radian
 angle_pitch += angle_roll * sin(gyro_z * 0.000001066);   // Nếu IMU đã quay, chuyển góc cuộn sang góc nghiêng 
-angle_roll -= angle_pitch * sin(gyro_z * 0.000001066);   // Nếu IMU đã quay, chuyển góc nghiêng sang góc cuộn
 
 // Tính toán góc từ gia tốc kế:
 acc_total_vector = sqrt((accel_x*accel_x) + (accel_y*accel_y) + (accel_z*accel_z));   // Tính toán tổng vector gia tốc (Vector trọng lực)
 //57.296 = 1 / (3.142 / 180) Hàm asin của Arduino sử dụng đơn vị radian
 acc_angle_pitch = asin((float)accel_y/acc_total_vector)* 57.296;       // Tính toán góc nghiêng
-acc_angle_roll = asin((float)accel_x/acc_total_vector)* -57.296;       // Tính toán góc cuộn
 
 // Đặt MPU-6050 ở mức cân bằng và ghi lại các giá trị trong hai dòng sau để hiệu chỉnh
-  acc_angle_pitch -= 0;                                              // Giá trị hiệu chỉnh gia tốc kế cho góc nghiêng , -.5
-  acc_angle_roll -= 0;                                               // Giá trị hiệu chỉnh gia tốc kế cho góc cuộn, -3
+  acc_angle_pitch -= 3;                                              // Giá trị hiệu chỉnh gia tốc kế cho góc nghiêng , -.5
 
 if(set_gyro_angles){                                                 // Nếu IMU đã được khởi động
     // Bộ lọc bổ sung
     angle_pitch = angle_pitch * 0.9996 + acc_angle_pitch * 0.0004;     // Sửa lỗi trôi của góc nghiêng con quay hồi chuyển bằng góc nghiêng gia tốc kế
-    angle_roll = angle_roll * 0.9996 + acc_angle_roll * 0.0004;        // Sửa lỗi trôi của góc cuộn con quay hồi chuyển bằng góc cuộn gia tốc kế
     
   }
   else{                                                                // Lần khởi động đầu tiên, đặt giá trị góc nghiêng và cuộn của con quay hồi chuyển bằng giá trị của gia tốc kế để sửa lỗi địa hình không bằng phẳng
     angle_pitch = acc_angle_pitch;                                     // Đặt góc nghiêng con quay hồi chuyển bằng góc nghiêng gia tốc kế 
-    angle_roll = acc_angle_roll;                                       // Đặt góc cuộn con quay hồi chuyển bằng góc cuộn gia tốc kế 
     set_gyro_angles = true;                                            // Đặt cờ IMU đã khởi động
   }
 
 
 angle_pitch_output = angle_pitch; 
-angle_roll_output = angle_roll;  
 
 
 }
