@@ -6,6 +6,11 @@ Xe hai bánh tự cân bằng
  + Mạch Buck XL4015
  + Pin 18650
 
-Verion 1.0: Dùng giải thuật PID
-       1.1: Dùng giải thuật Cadecase PID (2 vòng PID)
-       2.0 : Dùng Fuzzy kết hợp PID( tự điều chỉnh hệ số PID)
+Verion 
++ 1.0: Dùng giải thuật PID
++ 1.1: Dùng giải thuật Cadecase PID (2 vòng PID)
++ 2.0 : Dùng Fuzzy kết hợp PID( tự điều chỉnh hệ số PID)
+
+## Kết quả thực tế
+ Link Youtube: https://www.youtube.com/playlist?list=PLvIbYPBREJ7JPMUcFMSeffSnmmATFrFDu
+ 
