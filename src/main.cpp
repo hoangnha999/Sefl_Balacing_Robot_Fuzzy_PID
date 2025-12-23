@@ -1,3 +1,4 @@
+// Thêm thư viện cần thiết
 #include <Wire.h>   
 #include <PID_v1.h> 
 #include <math.h>   
@@ -110,33 +111,33 @@ unsigned int velocity_timer = 0;
 
 
 void setup() {
-delay(500);  //Delay to give user a chance to get robot on its back before gyro calibration begins
+delay(500);  // Trì hoãn để người dùng có cơ hội đặt robot nằm ngửa trước khi hiệu chỉnh con quay hồi chuyển bắt đầu
 
-startup();    //Initialize Robot
+startup();    // Khởi tạo Robot
 
-pinMode(13, OUTPUT); // Set status LED as output
+pinMode(13, OUTPUT); // Đặt đèn LED trạng thái làm đầu ra
 
-imu_setup();    //Initialize IMU
+imu_setup();    // Khởi tạo IMU
 
-init_angle_PID();    //Initialize angle PID
-init_velocity_PID(); //Initialize velocity PID
+init_angle_PID();    // Khởi tạo PID góc
+init_velocity_PID(); // Khởi tạo PID vận tốc
 
-digitalWrite(13, LOW); // turn led off while calibrating
+digitalWrite(13, LOW); // tắt đèn LED trong khi hiệu chỉnh
 gyro_calibration();
-digitalWrite(13, HIGH); //Turn led on after calibration is complete 
+digitalWrite(13, HIGH); // Bật đèn LED sau khi hiệu chỉnh hoàn tất 
 
-looptime = micros();    //start keeping track of when the loop starts
+looptime = micros();    // bắt đầu theo dõi thời gian bắt đầu vòng lặp
 
 
 }
 
 void loop() {
-  angle_calc();                                                                                                  //calculate the angle of the robot
+  angle_calc();                                                                                                  // tính toán góc của robot
 
-  balance();                                                                                                     // Run the balancing routine which consists of the angle and velocity PID loops and associated logic
+  balance();                                                                                                     // Chạy quy trình cân bằng bao gồm các vòng lặp PID góc và vận tốc và logic liên quan
       
-  //Serial.println(float((micros() - looptime))/1000);                                                           //code that prints out the length of time the loop is taking in milliseconds 
-  while(micros() - looptime < 4000);                                                                             //Make sure the loop runs consistently at 4ms before preceding, 4000 microseconds = 4 ms. Loop should take <4ms no matter what phase of operation robot is in, otherwise there could be issues.
+  //Serial.println(float((micros() - looptime))/1000);                                                           // mã in ra thời gian vòng lặp đang mất bao nhiêu mili giây 
+  while(micros() - looptime < 4000);                                                                             // Đảm bảo vòng lặp chạy đều đặn ở 4ms trước khi tiếp tục, 4000 micro giây = 4 ms. Vòng lặp nên mất <4ms bất kể giai đoạn hoạt động của robot, nếu không có thể xảy ra vấn đề.
   looptime = micros(); 
 
 }
@@ -145,59 +146,59 @@ void loop() {
 
 void balance(){
 
-  if (first_up == true){                    //if the robot has not been pushed up yet,
-    angle_PID.SetMode(MANUAL);              //Make sure both PID calculations are off and not accumulating error while robot is tipped over
+  if (first_up == true){                    // nếu robot chưa được đẩy lên,
+    angle_PID.SetMode(MANUAL);              // Đảm bảo cả hai tính toán PID đều tắt và không tích lũy lỗi khi robot bị nghiêng
     velocity_PID.SetMode(MANUAL);
     velocity_output = 0;
-    angle_output = 0;                       // zero out "angle_output" value
+    angle_output = 0;                       // đặt giá trị "angle_output" về 0
   
-    if(angle_pitch_output >-1 && angle_pitch_output <1 ){    //if angle is close to zero
-       first_up = false;                                       //break robot from initialization loop
+    if(angle_pitch_output >-1 && angle_pitch_output <1 ){    // nếu góc gần bằng không
+       first_up = false;                                       // thoát khỏi vòng lặp khởi tạo robot
       }
     else{   
-       motorsOff();                                            //If robot is just laying on its back keep the motors off
+       motorsOff();                                            // Nếu robot chỉ nằm ngửa, giữ động cơ tắt
   }
     }
-     else if(first_up == false){                         //if robot has been pushed up, run all the necessary balancing functions.
+     else if(first_up == false){                         // nếu robot đã được đẩy lên, chạy tất cả các chức năng cân bằng cần thiết.
 
-      move_profile();                                    //subroutine to move robot forward and backwards
+      move_profile();                                    // chương trình con để di chuyển robot tiến và lùi
      //tune_PID_w_pots(1, 100, 100, 100);
 
      
-    angle_input = angle_pitch_output;                   //get input value for angle PID using the output from the angle_calc(); function
-   angle_PID.Compute();                                 //Compute the result of PID which gives us our new motor Output
-  angle_error = (angle_setpoint-angle_input);           //Calculate the error to decide whether the robot has fallen over to far or not, and what direction to run motors. PID algorithm on its own "knows" which direction to go, but the motor drivers don't know so we have to decide for them one way or another  
+    angle_input = angle_pitch_output;                   // lấy giá trị đầu vào cho PID góc sử dụng đầu ra từ hàm angle_calc();
+   angle_PID.Compute();                                 // Tính toán kết quả của PID, cho chúng ta đầu ra động cơ mới
+  angle_error = (angle_setpoint-angle_input);           // Tính toán lỗi để quyết định xem robot đã ngã quá xa hay chưa, và hướng nào để chạy động cơ. Thuật toán PID tự nó "biết" hướng nào để đi, nhưng trình điều khiển động cơ không biết nên chúng ta phải quyết định cho chúng một cách nào đó  
 
-      if (abs(angle_error) < 40){                       //If Robot hasn't fallen too far over, ie it is in a stable balancing position. 
-        angle_PID.SetMode(AUTOMATIC);                   // start PID calcs and start moving motors to balance robot
+      if (abs(angle_error) < 40){                       // Nếu Robot chưa ngã quá xa, tức là nó đang ở vị trí cân bằng ổn định. 
+        angle_PID.SetMode(AUTOMATIC);                   // bắt đầu tính toán PID và bắt đầu di chuyển động cơ để cân bằng robot
         
-        if(angle_output < 0){                            //Choose Direction of motor based on angle_PID output
-          angle_output = int(angle_output);             // PWM values can only be written as whole integer numbers
-          leftMotorSpeed(LOW, abs(angle_output));       // go " backwards" if robot leans backwards
+        if(angle_output < 0){                            // Chọn hướng động cơ dựa trên đầu ra PID góc
+          angle_output = int(angle_output);             // Giá trị PWM chỉ có thể được viết dưới dạng số nguyên
+          leftMotorSpeed(LOW, abs(angle_output));       // đi "lùi" nếu robot nghiêng về phía sau
           rightMotorSpeed(LOW, abs(angle_output));
              }
              
         else if(angle_output > 0){
-          angle_output = int(angle_output);              //PWM values can only be written as whole integer numbers.
-          leftMotorSpeed(HIGH, abs(angle_output));      //go "forwards" if robot leans "forwards"
+          angle_output = int(angle_output);              // Giá trị PWM chỉ có thể được viết dưới dạng số nguyên.
+          leftMotorSpeed(HIGH, abs(angle_output));      // đi "tiến" nếu robot nghiêng về phía trước
           rightMotorSpeed(HIGH, abs(angle_output));
         }
         
-  }   else {                                            //If robot has fallen over / gone past allowable angle
-        angle_PID.SetMode(MANUAL);                     //Make sure robot fallen over doesn't run up I term, turn off PID 
-        motorsOff();                                   //Turn off motors
-        angle_output = 0;                              //Reset angle_output values
-        first_up = true;                               //reset robot "first up" flag
+  }   else {                                            // Nếu robot đã ngã / vượt quá góc cho phép
+        angle_PID.SetMode(MANUAL);                     // Đảm bảo robot ngã không chạy lên I term, tắt PID 
+        motorsOff();                                   // Tắt động cơ
+        angle_output = 0;                              // Đặt lại giá trị đầu ra góc
+        first_up = true;                               // đặt lại cờ "first up" của robot
   }
    
     
-//Velocity Calculation Stuff 
-     velocity_PID.SetMode(AUTOMATIC);                              //Make sure PID is on
+// Tính toán vận tốc 
+     velocity_PID.SetMode(AUTOMATIC);                              // Đảm bảo PID đang bật
      velocity_calculations();
-     velocity_input = filtered_velocity_average;                   //the input into the PID controller is the average velocity of the two wheels. 
-     velocity_error = velocity_setpoint - velocity_input;          // calculate the error between the desired and current velocity
-     velocity_PID.Compute();                                       //Compute the PID loop. 
-     angle_setpoint = velocity_output;                             //make the new angle setpoint the negative output of the velocity PID loop.      
+     velocity_input = filtered_velocity_average;                   // đầu vào vào bộ điều khiển PID là vận tốc trung bình của hai bánh xe. 
+     velocity_error = velocity_setpoint - velocity_input;          // tính toán lỗi giữa vận tốc mong muốn và hiện tại
+     velocity_PID.Compute();                                       // Tính toán vòng lặp PID. 
+     angle_setpoint = velocity_output;                             // đặt giá trị mong muốn góc mới là đầu ra âm của vòng lặp PID vận tốc.      
        }
 }
 
@@ -226,6 +227,7 @@ void velocity_calculations(){
       time_multiple_left++;
      }
                                                                          
+
    filtered_velocity_left = (filtered_velocity_left * .95) + (velocity_left * .05);            //filter the velocity output with a low and high pass filter to get a smooth transition from value to value
    filtered_velocity_right = (filtered_velocity_right * .95) + (velocity_right * .05);
    filtered_velocity_average = (filtered_velocity_left + (filtered_velocity_right * -1) ) /2 ;
@@ -281,7 +283,6 @@ void set_velocity_PID(){
   velocity_PID.SetTunings(velocity_Kp,velocity_Ki,velocity_Kd);
 }
 
-
 // Hàm điều khiển hướng và tốc độ động cơ trái
 void leftMotorSpeed(byte dir, int pwm){    //dir nên là HIGH hoặc LOW, điều khiển hướng. pwm từ 0-255, điều khiển tốc độ động cơ. 
   if(pwm > 255){
@@ -320,7 +321,6 @@ void motorsOff(){
 
 
 void startup(){                 // Khởi tạo robot
-  
   Serial.begin(115200);
   pinMode(dirPin_1, OUTPUT);
   pinMode(pwmPin_1, OUTPUT);
@@ -381,16 +381,16 @@ void imu_setup(){ // Khởi tạo gia tốc kế, con quay hồi chuyển; đặ
 
 }
 
-void gyro_calibration(){    //Calibration Class
+void gyro_calibration(){    // Hàm hiệu chỉnh con quay hồi chuyển
 
-for(int cycle_count = 0; cycle_count < 2000; cycle_count++){    //This loop takes 2000 readings of the gyro x,y, and z axes
-  read_MPU6050();                       //Grab raw MPU6050 values  
-  gyro_x_cal += gyro_x;               //Add new raw value to total gyro value 
+for(int cycle_count = 0; cycle_count < 2000; cycle_count++){    // Vòng lặp này lấy 2000 giá trị đọc từ các trục x, y, và z của con quay hồi chuyển
+  read_MPU6050();                       // Lấy giá trị thô từ MPU6050  
+  gyro_x_cal += gyro_x;               // Thêm giá trị thô mới vào tổng giá trị con quay hồi chuyển 
   gyro_y_cal += gyro_y;
   gyro_z_cal += gyro_z;
-  delay(4);                //add 3us delay to simulate 250hz loop.
+  delay(4);                // thêm độ trễ 3 micro giây để mô phỏng vòng lặp 250Hz.
 }
-gyro_x_cal /= 2000;   //divide by 2000 to get average calibration values
+gyro_x_cal /= 2000;   // chia cho 2000 để lấy giá trị trung bình hiệu chỉnh
 gyro_y_cal /= 2000;
 gyro_z_cal /= 2000;
 
@@ -398,15 +398,15 @@ gyro_z_cal /= 2000;
 
  
 void read_MPU6050(){
-  Wire.beginTransmission(MPU6050);   //Set up IMU as a slave 
-  Wire.write(ACCEL_XOUT_15_8);    //Send requested starting register
+  Wire.beginTransmission(MPU6050);   // Thiết lập IMU làm slave 
+  Wire.write(ACCEL_XOUT_15_8);    // Gửi thanh ghi bắt đầu được yêu cầu
   Wire.endTransmission();
-  Wire.requestFrom(MPU6050,14);  //request 14 bytes of data to be read, don't kill connection. This will automatically call up the next registers after ACCEL_XOUT_15_8 for "14" cycles, so that the 14 next sequential registers' data                                       //is read and placed into the buffer to be sent. In this case that is convienent because the next 14 registers are all data registers for the accelerometer and gyroscope 
+  Wire.requestFrom(MPU6050,14);  // yêu cầu đọc 14 byte dữ liệu, không ngắt kết nối. Điều này sẽ tự động gọi các thanh ghi tiếp theo sau ACCEL_XOUT_15_8 trong "14" chu kỳ, vì vậy dữ liệu của 14 thanh ghi tiếp theo sẽ được đọc và đặt vào bộ đệm để gửi. Trong trường hợp này, điều này thuận tiện vì 14 thanh ghi tiếp theo đều là thanh ghi dữ liệu cho gia tốc kế và con quay hồi chuyển 
   while(Wire.available() < 14);  
-  accel_x = (Wire.read()<<8) | Wire.read();    //Burst Read Data, int16_t handles the 2's complement which is output by the IMU. We need to read all the data at once to ensure our readings are from the same instance in time
-                                                     //We are sequentially reading out the 14 bytes requested at the beginning of the loop, and combining two registers together to get the full 16 bit value for each axis 
-  accel_y = (Wire.read()<<8) | Wire.read();    //Y axis
-  accel_z = (Wire.read()<<8) | Wire.read();    //Z axis
+  accel_x = (Wire.read()<<8) | Wire.read();    // Đọc dữ liệu theo kiểu Burst, int16_t xử lý bù 2 được xuất bởi IMU. Chúng ta cần đọc tất cả dữ liệu cùng một lúc để đảm bảo các giá trị đọc được từ cùng một thời điểm
+                                                     // Chúng ta đang đọc tuần tự 14 byte được yêu cầu ở đầu vòng lặp, và kết hợp hai thanh ghi lại để lấy giá trị 16 bit đầy đủ cho mỗi trục 
+  accel_y = (Wire.read()<<8) | Wire.read();    // Trục Y
+  accel_z = (Wire.read()<<8) | Wire.read();    // Trục Z
  
   tempReading = (Wire.read()<<8) | Wire.read();    
 
@@ -417,41 +417,41 @@ void read_MPU6050(){
  
 }
 
-void angle_calc(){   // pass the accel and gyro addresses.
+void angle_calc(){   // Hàm tính toán góc, sử dụng giá trị từ gia tốc kế và con quay hồi chuyển
 
 read_MPU6050();
 
-gyro_x -= gyro_x_cal;   // Subtract the gyro calibration value from the current gyro value. 
+gyro_x -= gyro_x_cal;   // Trừ giá trị hiệu chỉnh con quay hồi chuyển khỏi giá trị hiện tại. 
 gyro_y -= gyro_y_cal;
 gyro_z -= gyro_z_cal;
 
-angle_pitch += gyro_x * .0000611;   //Calculate the angle traveled over the last 4ms period and add it to the angle_pitch value
-angle_roll += gyro_y * .0000611;    //Calculate the angle traveled over the last 4ms period and add it to the angle_roll value
+angle_pitch += gyro_x * .0000611;   // Tính toán góc đã di chuyển trong khoảng thời gian 4ms vừa qua và cộng vào giá trị góc nghiêng
+angle_roll += gyro_y * .0000611;    // Tính toán góc đã di chuyển trong khoảng thời gian 4ms vừa qua và cộng vào giá trị góc cuộn
 
-//0.000001066 = 0.0000611 * (3.142(PI) / 180degr) The Arduino sin function is in radians
-angle_pitch += angle_roll * sin(gyro_z * 0.000001066);   //If the IMU has yawed transfer the roll angle to the pitch angle 
-angle_roll -= angle_pitch * sin(gyro_z * 0.000001066);   //If the IMU has yawed transfer the pitch angle to the roll angle
+//0.000001066 = 0.0000611 * (3.142(PI) / 180 độ) Hàm sin của Arduino sử dụng đơn vị radian
+angle_pitch += angle_roll * sin(gyro_z * 0.000001066);   // Nếu IMU đã quay, chuyển góc cuộn sang góc nghiêng 
+angle_roll -= angle_pitch * sin(gyro_z * 0.000001066);   // Nếu IMU đã quay, chuyển góc nghiêng sang góc cuộn
 
-//Accelerometer Angle Calculations:
-acc_total_vector = sqrt((accel_x*accel_x) + (accel_y*accel_y) + (accel_z*accel_z));   //Calculate the total Accelerometer vector (Gravity Vector)
-//57.296 = 1 / (3.142 / 180) The Arduino asin function is in radians
-acc_angle_pitch = asin((float)accel_y/acc_total_vector)* 57.296;       //Calculate the pitch angle
-acc_angle_roll = asin((float)accel_x/acc_total_vector)* -57.296;       //Calculate the roll angle
+// Tính toán góc từ gia tốc kế:
+acc_total_vector = sqrt((accel_x*accel_x) + (accel_y*accel_y) + (accel_z*accel_z));   // Tính toán tổng vector gia tốc (Vector trọng lực)
+//57.296 = 1 / (3.142 / 180) Hàm asin của Arduino sử dụng đơn vị radian
+acc_angle_pitch = asin((float)accel_y/acc_total_vector)* 57.296;       // Tính toán góc nghiêng
+acc_angle_roll = asin((float)accel_x/acc_total_vector)* -57.296;       // Tính toán góc cuộn
 
-//Place the MPU-6050 spirit level and note the values in the following two lines for calibration
-  acc_angle_pitch -= 0;                                              //Accelerometer calibration value for pitch , -.5
-  acc_angle_roll -= 0;                                               //Accelerometer calibration value for roll, -3
+// Đặt MPU-6050 ở mức cân bằng và ghi lại các giá trị trong hai dòng sau để hiệu chỉnh
+  acc_angle_pitch -= 0;                                              // Giá trị hiệu chỉnh gia tốc kế cho góc nghiêng , -.5
+  acc_angle_roll -= 0;                                               // Giá trị hiệu chỉnh gia tốc kế cho góc cuộn, -3
 
-if(set_gyro_angles){                                                 //If the IMU is already started
-    //Complimentary Filter
-    angle_pitch = angle_pitch * 0.9996 + acc_angle_pitch * 0.0004;     //Correct the drift of the gyro pitch angle with the accelerometer pitch angle
-    angle_roll = angle_roll * 0.9996 + acc_angle_roll * 0.0004;        //Correct the drift of the gyro roll angle with the accelerometer roll angle
+if(set_gyro_angles){                                                 // Nếu IMU đã được khởi động
+    // Bộ lọc bổ sung
+    angle_pitch = angle_pitch * 0.9996 + acc_angle_pitch * 0.0004;     // Sửa lỗi trôi của góc nghiêng con quay hồi chuyển bằng góc nghiêng gia tốc kế
+    angle_roll = angle_roll * 0.9996 + acc_angle_roll * 0.0004;        // Sửa lỗi trôi của góc cuộn con quay hồi chuyển bằng góc cuộn gia tốc kế
     
   }
-  else{                                                                //At first start, set gyro pitch and roll values to gyro values to correct for uneven terrain
-    angle_pitch = acc_angle_pitch;                                     //Set the gyro pitch angle equal to the accelerometer pitch angle 
-    angle_roll = acc_angle_roll;                                       //Set the gyro roll angle equal to the accelerometer roll angle 
-    set_gyro_angles = true;                                            //Set the IMU started flag
+  else{                                                                // Lần khởi động đầu tiên, đặt giá trị góc nghiêng và cuộn của con quay hồi chuyển bằng giá trị của gia tốc kế để sửa lỗi địa hình không bằng phẳng
+    angle_pitch = acc_angle_pitch;                                     // Đặt góc nghiêng con quay hồi chuyển bằng góc nghiêng gia tốc kế 
+    angle_roll = acc_angle_roll;                                       // Đặt góc cuộn con quay hồi chuyển bằng góc cuộn gia tốc kế 
+    set_gyro_angles = true;                                            // Đặt cờ IMU đã khởi động
   }
 
 
