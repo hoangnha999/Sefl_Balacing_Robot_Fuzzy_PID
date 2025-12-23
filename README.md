@@ -11,7 +11,7 @@ Verion
 + 1.1: Dùng giải thuật Cadecase PID (2 vòng PID)
 + 2.0 : Dùng Fuzzy kết hợp PID( tự điều chỉnh hệ số PID)
 
-## Kết quả thực tế
+## Kết quả thực tế:
 + Phần cứng thực tế:
        ![alt text](image.png)
 
