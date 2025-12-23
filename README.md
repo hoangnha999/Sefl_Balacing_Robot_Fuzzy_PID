@@ -12,5 +12,8 @@ Verion
 + 2.0 : Dùng Fuzzy kết hợp PID( tự điều chỉnh hệ số PID)
 
 ## Kết quả thực tế
++ Phần cứng thực tế:
+       ![alt text](image.png)
+
  Link Youtube: https://www.youtube.com/playlist?list=PLvIbYPBREJ7JPMUcFMSeffSnmmATFrFDu
- 
+
