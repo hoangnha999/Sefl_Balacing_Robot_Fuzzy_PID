@@ -1,4 +1,3 @@
-// Thêm thư viện cần thiết
 #include <Wire.h>   
 #include <PID_v1.h> 
 #include <math.h>   
@@ -31,7 +30,6 @@ boolean first_up = true; // Cờ kiểm tra lần đầu tiên
 #define ACCEL_ZOUT_15_8 0x3F
 #define ACCEL_ZOUT_7_0 0x40
 
-// CÁC THIẾT LẬP CON QUAY HỒI CHUYỂN
 
 #define GYRO_CONFIG 0x1B
 
@@ -43,24 +41,24 @@ boolean first_up = true; // Cờ kiểm tra lần đầu tiên
 #define GYRO_ZOUT_15_8 0x47
 #define GYRO_ZOUT_7_0 0x48
 
-// Các thanh ghi cảm biến nhiệt độ. 
+ 
 #define TEMP_OUT_15_8 0x41
 #define TEMP_OUT_7_0 0x42
 
 // Chân động cơ trái
-#define  pwmPin_1 = 6;   
-#define  dirPin_1 = 7; 
-#define  left_motor_output_a = 2; 
-#define left_motor_output_b = 4; 
+#define  pwmPin_1  6
+#define  dirPin_1  7
+#define  left_motor_output_a  2
+#define left_motor_output_b  4
 
 // Chân động cơ phải
-#define dirPin_2 = 8;   
-#define pwmPin_2 = 9; 
-#define right_motor_output_a = 3; 
-#define right_motor_output_b = 5; 
+#define dirPin_2  8
+#define pwmPin_2  9
+#define right_motor_output_a  3
+#define right_motor_output_b  5
   
-#define left_minimum_motor_speed = 0;
-#define right_minimum_motor_speed = 4;
+const int  left_minimum_motor_speed = 0;
+const int  right_minimum_motor_speed = 10;
 
 // CÁC THIẾT LẬP ENCODER 
 Encoder left_encoder(left_motor_output_a, left_motor_output_b);   
@@ -97,7 +95,6 @@ PID angle_PID(&angle_input, &angle_output, &angle_setpoint, angle_Kp, angle_Ki, 
 
 // Điều khiển vận tốc PID 
 
-/* Định nghĩa các biến kết nối. Setpoint = giá trị mong muốn, Input = giá trị đầu vào PID, Output = giá trị đầu ra để đạt được setpoint.*/
 double velocity_setpoint,smoothed_velocity_setpoint, velocity_input, velocity_output, velocity_error; // double giống float cho atmega 2560 nhưng thư viện PID chỉ chấp nhận double 
 
 /* Giá trị điều chỉnh */
@@ -111,20 +108,16 @@ unsigned int velocity_timer = 0;
 
 
 void setup() {
-delay(500);  // Trì hoãn để người dùng có cơ hội đặt robot nằm ngửa trước khi hiệu chỉnh con quay hồi chuyển bắt đầu
-
+Serial.begin(9600);
 startup();    // Khởi tạo Robot
 
-pinMode(13, OUTPUT); // Đặt đèn LED trạng thái làm đầu ra
 
 imu_setup();    // Khởi tạo IMU
 
 init_angle_PID();    // Khởi tạo PID góc
 init_velocity_PID(); // Khởi tạo PID vận tốc
 
-digitalWrite(13, LOW); // tắt đèn LED trong khi hiệu chỉnh
 gyro_calibration();
-digitalWrite(13, HIGH); // Bật đèn LED sau khi hiệu chỉnh hoàn tất 
 
 looptime = micros();    // bắt đầu theo dõi thời gian bắt đầu vòng lặp
 
@@ -134,9 +127,9 @@ looptime = micros();    // bắt đầu theo dõi thời gian bắt đầu vòng
 void loop() {
   angle_calc();                                                                                                  // tính toán góc của robot
 
-  balance();                                                                                                     // Chạy quy trình cân bằng bao gồm các vòng lặp PID góc và vận tốc và logic liên quan
+  balance();  
+  //Serial.println(angle_pitch_output);                                                                                                  // Chạy quy trình cân bằng bao gồm các vòng lặp PID góc và vận tốc và logic liên quan
       
-  //Serial.println(float((micros() - looptime))/1000);                                                           // mã in ra thời gian vòng lặp đang mất bao nhiêu mili giây 
   while(micros() - looptime < 4000);                                                                             // Đảm bảo vòng lặp chạy đều đặn ở 4ms trước khi tiếp tục, 4000 micro giây = 4 ms. Vòng lặp nên mất <4ms bất kể giai đoạn hoạt động của robot, nếu không có thể xảy ra vấn đề.
   looptime = micros(); 
 
@@ -152,7 +145,7 @@ void balance(){
     velocity_output = 0;
     angle_output = 0;                       // đặt giá trị "angle_output" về 0
   
-    if(angle_pitch_output >-1 && angle_pitch_output <1 ){    // nếu góc gần bằng không
+    if(angle_pitch_output >-20 && angle_pitch_output <20 ){    // nếu góc gần bằng không
        first_up = false;                                       // thoát khỏi vòng lặp khởi tạo robot
       }
     else{   
@@ -162,8 +155,7 @@ void balance(){
      else if(first_up == false){                         // nếu robot đã được đẩy lên, chạy tất cả các chức năng cân bằng cần thiết.
 
       move_profile();                                    // chương trình con để di chuyển robot tiến và lùi
-     //tune_PID_w_pots(1, 100, 100, 100);
-
+    
      
     angle_input = angle_pitch_output;                   // lấy giá trị đầu vào cho PID góc sử dụng đầu ra từ hàm angle_calc();
    angle_PID.Compute();                                 // Tính toán kết quả của PID, cho chúng ta đầu ra động cơ mới
@@ -206,7 +198,7 @@ void velocity_calculations(){
  
    x_final_right = right_encoder.read();                                                          //check encoder position
     if (x_final_right != x_initial_right){                                                        // check to make sure new encoder value is not the same as previous one 
-      velocity_right = ((x_final_right - x_initial_right)*.0114)/(.004 * time_multiple_right) ;    //delta x just change in time in seconds between encoder readings
+      velocity_right = ((x_final_right - x_initial_right)*.0227)/(.004 * time_multiple_right) ;    //delta x just change in time in seconds between encoder readings
       x_initial_right = x_final_right;
       time_multiple_right = 1;                                                                    //if this bit of code has been run reset delta t to be multiplied by 1
     
@@ -216,7 +208,7 @@ void velocity_calculations(){
 
     x_final_left = left_encoder.read();
      if (x_final_left != x_initial_right){                                                      // check to make sure new encoder value is not the same as previous one
-       velocity_left = ((x_final_left - x_initial_left)*.0114)/(.004 * time_multiple_left);      //calculate the final velocities for left and right encoders. formula is: v = delta x / delta t. delta x is distance between two encoder readings, with .0114 being distance between single encoder "tick" roughly. Derived from 1920 CPR and diameter of wheels
+       velocity_left = ((x_final_left - x_initial_left)*.0227)/(.004 * time_multiple_left);      //calculate the final velocities for left and right encoders. formula is: v = delta x / delta t. delta x is distance between two encoder readings, with .0114 being distance between single encoder "tick" roughly. Derived from 1920 CPR and diameter of wheels
        x_initial_left = x_final_left;                                                          //set final values to the initial values so when program loops around in 4ms the current "final" becomes the "initial" values and we fetch new final values
        time_multiple_left = 1;                                                                 //if this bit of code has been run reset delta t to be multiplied by 1
      
@@ -237,13 +229,7 @@ void velocity_calculations(){
   
 }
 
-void readout_velocity_calulation_data(){                                                       //Trouble Shooting Function
-  Serial.print(filtered_velocity_left);
-   Serial.print(" ");
-   Serial.print(filtered_velocity_right *-1);
-   Serial.print(" ");
-   Serial.println(filtered_velocity_average); 
-}
+
 void move_profile(){                                                                          //This function makes the robot move forward and backward a little bit.
   
   if(velocity_timer >= 750 && velocity_timer <= 1000){
@@ -270,8 +256,8 @@ velocity_timer++;
 }
 
 void set_angle_PID(){
-   angle_Kp = 28;
-   angle_Ki = 13;
+   angle_Kp = 48;
+   angle_Ki = 170;
    angle_Kd = .35;   //Keep angle_Kd relatively small compared to the other values
    angle_PID.SetTunings(angle_Kp,angle_Ki,angle_Kd);
 }
@@ -320,23 +306,19 @@ void motorsOff(){
 }
 
 
-void startup(){                 // Khởi tạo robot
-  Serial.begin(115200);
+void startup(){               
   pinMode(dirPin_1, OUTPUT);
   pinMode(pwmPin_1, OUTPUT);
   pinMode(dirPin_2, OUTPUT);
   pinMode(pwmPin_2, OUTPUT);
-  pinMode(13, OUTPUT);        // Đặt đèn LED trạng thái làm đầu ra
 }
 
 
 
 void init_angle_PID(){
-  
-  // Khởi tạo các biến liên kết
- //float a;
+
   angle_input = 0;
-  angle_setpoint = 0;   // Giá trị mong muốn
+  angle_setpoint = 0;   
  // angle_PID.SetMode(AUTOMATIC);
   angle_PID.SetSampleTime(4);   // Tính toán PID mỗi 4 ms, mặc định thư viện là 200ms, quá lâu
   angle_PID.SetOutputLimits(-255,255);    // Đặt phạm vi đầu ra của vòng lặp PID
@@ -345,14 +327,13 @@ void init_angle_PID(){
 }
 
 void init_velocity_PID(){
-  // Khởi tạo các biến liên kết
-// float a;
+
   velocity_input = 0;
   velocity_setpoint = 0;   // Giá trị mong muốn
   smoothed_velocity_setpoint = 0;
   velocity_PID.SetMode(AUTOMATIC);
   velocity_PID.SetSampleTime(4);   // Tính toán PID mỗi 4 ms, mặc định thư viện là 200ms, quá lâu
-  velocity_PID.SetOutputLimits(-1000,1000);    // Đặt phạm vi đầu ra của vòng lặp PID
+  velocity_PID.SetOutputLimits(-100,100);    // Đặt phạm vi đầu ra của vòng lặp PID
   set_velocity_PID(); // Ghi và đặt giá trị PID vận tốc
   
 }
@@ -460,7 +441,6 @@ angle_roll_output = angle_roll;
 
 
 }
-
 
 
 
