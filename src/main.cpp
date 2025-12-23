@@ -1,15 +1,14 @@
 #include <Wire.h>   
 #include <PID_v1.h> 
-#include <math.h>   // Thư viện toán học
-#include <Encoder.h> // Thư viện Encoder, bộ mã hóa có 1920 CPR. 64 CPR cơ bản, nhân với 30 do tỷ lệ bánh răng = 1920.
-
+#include <math.h>   
+#include <Encoder.h> 
 
 #define MPU6050 0x68    // Địa chỉ IMU
 
 // Được sử dụng để đưa IMU ra khỏi chế độ ngủ
 #define PWR_MGMT_1 0x6B   
 
-// BIẾN TOÀN CỤC~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// BIẾN TOÀN CỤC
 
 long accel_x, accel_y, accel_z, acc_total_vector; // Các giá trị gia tốc
 int16_t gyro_x, gyro_y, gyro_z; // Các giá trị con quay hồi chuyển
@@ -21,20 +20,17 @@ unsigned long looptime; // Thời gian vòng lặp
 boolean set_gyro_angles; // Cờ thiết lập góc con quay hồi chuyển
 boolean first_up = true; // Cờ kiểm tra lần đầu tiên
 
-// CÁC THIẾT LẬP GIA TỐC KẾ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// CÁC THIẾT LẬP GIA TỐC KẾ
 
-// Cấu hình cho gia tốc kế, AFS_SEL chọn phạm vi
 #define ACCEL_CONFIG 0x1C   
 
-// Các thanh ghi đo gia tốc, hiển thị giá trị mới nhất của gia tốc kế, mỗi trục bao gồm 2 thanh ghi. Có thể tìm thấy trong bản đồ thanh ghi MPU-6050. Các thanh ghi này chỉ đọc, dành cho người dùng.
-#define ACCEL_XOUT_15_8 0x3B   // Ví dụ, thanh ghi này và
-#define ACCEL_XOUT_7_0 0x3C                                   // thanh ghi này tạo thành trục x
+#define ACCEL_XOUT_15_8 0x3B   
 #define ACCEL_YOUT_15_8 0x3D
 #define ACCEL_YOUT_7_0 0x3E
 #define ACCEL_ZOUT_15_8 0x3F
 #define ACCEL_ZOUT_7_0 0x40
 
-// CÁC THIẾT LẬP CON QUAY HỒI CHUYỂN~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+// CÁC THIẾT LẬP CON QUAY HỒI CHUYỂN
 
 #define GYRO_CONFIG 0x1B
 
@@ -46,31 +42,27 @@ boolean first_up = true; // Cờ kiểm tra lần đầu tiên
 #define GYRO_ZOUT_15_8 0x47
 #define GYRO_ZOUT_7_0 0x48
 
-// CẢM BIẾN NHIỆT ĐỘ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // Các thanh ghi cảm biến nhiệt độ. 
 #define TEMP_OUT_15_8 0x41
 #define TEMP_OUT_7_0 0x42
 
-// CÁC THIẾT LẬP ĐỘNG CƠ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-/* Hướng được xác định bằng cách nhìn robot từ phía trước, là phía gần với jack 12v nhất, trục x dương tiến về phía trước theo gia tốc kế. */
 // Chân động cơ trái
-const byte pwmPin_1 = 4;   
-const byte dirPin_1 = 5; 
-const byte left_motor_output_a = 18; //(Dây vàng)
-const byte left_motor_output_b = 19; //(Dây trắng)
+#define  pwmPin_1 = 6;   
+#define  dirPin_1 = 7; 
+#define  left_motor_output_a = 2; 
+#define left_motor_output_b = 4; 
 
 // Chân động cơ phải
-const byte dirPin_2 = 6;   
-const byte pwmPin_2 = 7; 
-const byte right_motor_output_a = 3; //(Dây vàng) 
-const byte right_motor_output_b = 2; //(Dây trắng)
+#define dirPin_2 = 8;   
+#define pwmPin_2 = 9; 
+#define right_motor_output_a = 3; 
+#define right_motor_output_b = 5; 
   
-const byte left_minimum_motor_speed = 0;//8  // Tốc độ tối thiểu động cơ quay để vượt qua quán tính và bắt robot
-const byte right_minimum_motor_speed = 4;//11
+#define left_minimum_motor_speed = 0;
+#define right_minimum_motor_speed = 4;
 
-// CÁC THIẾT LẬP ENCODER ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Encoder left_encoder(left_motor_output_a, left_motor_output_b);   // Tạo đối tượng encoder và đặt chân
+// CÁC THIẾT LẬP ENCODER 
+Encoder left_encoder(left_motor_output_a, left_motor_output_b);   
 Encoder right_encoder(right_motor_output_a, right_motor_output_b); 
 
 long x_final_left = 0;
@@ -92,12 +84,9 @@ boolean first_pass = true;
 
 unsigned int loopcount = 0;
 
-// CÁC THIẾT LẬP PID ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-// Điều khiển góc PID ----------------------------------------------------------------------------------------------------------------
-
-/* Định nghĩa các biến kết nối. Setpoint = giá trị mong muốn, Input = giá trị đầu vào PID, Output = giá trị đầu ra để đạt được setpoint.*/
-double angle_setpoint, angle_input, angle_output, angle_error; // double giống float cho atmega 2560 nhưng thư viện PID chỉ chấp nhận double 
+// Điều khiển góc PID 
+double angle_setpoint, angle_input, angle_output, angle_error;  
 
 /* Giá trị điều chỉnh */
 double angle_Kp, angle_Ki, angle_Kd; // phải lớn hơn 0
@@ -105,7 +94,7 @@ double angle_Kp, angle_Ki, angle_Kd; // phải lớn hơn 0
 /* Khởi tạo đối tượng PID */
 PID angle_PID(&angle_input, &angle_output, &angle_setpoint, angle_Kp, angle_Ki, angle_Kd, DIRECT);
 
-// Điều khiển vận tốc PID ---------------------------------------------------------------------------------------------------------------------------------------
+// Điều khiển vận tốc PID 
 
 /* Định nghĩa các biến kết nối. Setpoint = giá trị mong muốn, Input = giá trị đầu vào PID, Output = giá trị đầu ra để đạt được setpoint.*/
 double velocity_setpoint,smoothed_velocity_setpoint, velocity_input, velocity_output, velocity_error; // double giống float cho atmega 2560 nhưng thư viện PID chỉ chấp nhận double 
@@ -119,29 +108,6 @@ PID velocity_PID(&velocity_input, &velocity_output, &smoothed_velocity_setpoint,
 unsigned int velocity_loopcount = 0;
 unsigned int velocity_timer = 0;
 
-// Điều khiển động cơ PID ---------------------------------------------------------------------------------------------------------------------------------------
-double left_motor_velocity_setpoint, left_motor_velocity_input, left_motor_velocity_output;
-double left_motor_velocity_Kp, left_motor_velocity_Ki, left_motor_velocity_Kd; 
-
-PID left_motor_velocity_PID(&left_motor_velocity_input, &left_motor_velocity_output, &left_motor_velocity_setpoint, left_motor_velocity_Kp, left_motor_velocity_Ki, left_motor_velocity_Kd, DIRECT);   
-
-//--------------------------------------------------------------------------------------------------------------------------------------------------------------------
-
-/* Cảm biến chiết áp */
-const byte p_pot_pin = A0; // chân cảm biến chiết áp được kết nối
-const byte i_pot_pin = A1; 
-const byte d_pot_pin = A2; 
-
-double p_pot_value;          // biến lưu giá trị chiết áp
-double i_pot_value;          
-double d_pot_value;
-
-const byte pid_switch = 53; // chân # của công tắc điều khiển bật hoặc tắt điều chỉnh PID.
-byte pid_switch_value; // Giá trị của công tắc dùng để xác định robot có ở chế độ điều chỉnh PID hay không 
-
-int timer = 0; // Bộ đếm thời gian dùng để đảm bảo các chức năng chỉ chạy với tần suất nhất định
-
-//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 void setup() {
 delay(500);  //Delay to give user a chance to get robot on its back before gyro calibration begins
@@ -161,11 +127,6 @@ digitalWrite(13, HIGH); //Turn led on after calibration is complete
 
 looptime = micros();    //start keeping track of when the loop starts
 
-pinMode(pid_switch, INPUT_PULLUP);    //On the fly PID tuning pot and switch pins. 
-pinMode(p_pot_pin, INPUT);
-pinMode(i_pot_pin, INPUT);
-pinMode(i_pot_pin, INPUT);
-
 
 }
 
@@ -180,9 +141,7 @@ void loop() {
 
 }
 
-void motor_control(){
-  
-}
+
 
 void balance(){
 
@@ -232,7 +191,7 @@ void balance(){
   }
    
     
-//Velocity Calculation Stuff ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//Velocity Calculation Stuff 
      velocity_PID.SetMode(AUTOMATIC);                              //Make sure PID is on
      velocity_calculations();
      velocity_input = filtered_velocity_average;                   //the input into the PID controller is the average velocity of the two wheels. 
@@ -270,8 +229,7 @@ void velocity_calculations(){
    filtered_velocity_left = (filtered_velocity_left * .95) + (velocity_left * .05);            //filter the velocity output with a low and high pass filter to get a smooth transition from value to value
    filtered_velocity_right = (filtered_velocity_right * .95) + (velocity_right * .05);
    filtered_velocity_average = (filtered_velocity_left + (filtered_velocity_right * -1) ) /2 ;
-   //readout_velocity_calulation_data();
-   
+ 
 
   
   
@@ -304,9 +262,7 @@ void move_profile(){                                                            
  }
 
 
-Serial.print(velocity_setpoint);
-Serial.print(" ");
-Serial.println(smoothed_velocity_setpoint);
+
 velocity_timer++;
 
 }
@@ -319,18 +275,12 @@ void set_angle_PID(){
 }
 
 void set_velocity_PID(){
-  velocity_Kp = .15;    //.2
-  velocity_Ki = .08;   //.15
-  velocity_Kd = 0;    //0
+  velocity_Kp = .15;    
+  velocity_Ki = .08;   
+  velocity_Kd = 0;    
   velocity_PID.SetTunings(velocity_Kp,velocity_Ki,velocity_Kd);
 }
 
-void set_left_motor_velocity_PID(){
-  left_motor_velocity_Kp = 0;   
-  left_motor_velocity_Ki = 0;   
-  left_motor_velocity_Kd = 0;    
-  left_motor_velocity_PID.SetTunings(left_motor_velocity_Kp,left_motor_velocity_Ki,left_motor_velocity_Kd);
-}
 
 // Hàm điều khiển hướng và tốc độ động cơ trái
 void leftMotorSpeed(byte dir, int pwm){    //dir nên là HIGH hoặc LOW, điều khiển hướng. pwm từ 0-255, điều khiển tốc độ động cơ. 
@@ -379,60 +329,7 @@ void startup(){                 // Khởi tạo robot
   pinMode(13, OUTPUT);        // Đặt đèn LED trạng thái làm đầu ra
 }
 
-void tune_PID_w_pots( byte PID_select, double P_high, double I_high, double K_high ){
 
-boolean PID_switch_value = digitalRead(pid_switch);   // Công tắc điều khiển việc sử dụng chiết áp PID. 
-
-if ((float(timer) *.004) > .2 ){   // Chỉ cập nhật giá trị chiết áp 5 lần mỗi giây thay vì 250
-
-  if(PID_switch_value == LOW){    // Nếu công tắc được cắm và đóng
-   
-    p_pot_value = analogRead(p_pot_pin);    // Đọc giá trị chiết áp P
-    p_pot_value = map(p_pot_value, 0, 1023, 0, P_high);
-
-    i_pot_value = analogRead(i_pot_pin);  
-    i_pot_value = map(i_pot_value, 0, 1023, 0, I_high);
-
-    d_pot_value = analogRead(d_pot_pin);
-    d_pot_value = map(d_pot_value, 0, 1023, 0, K_high);
-    
-    if(PID_select == 0){  
-      
-    angle_Kp = p_pot_value;
-    angle_Ki = i_pot_value;
-   angle_Kd = d_pot_value * .01;   // Giữ giá trị Kd nhỏ hơn so với các giá trị khác
-   
-   angle_PID.SetTunings(angle_Kp,angle_Ki,angle_Kd);  
-
-    Serial.print("P:");
-    Serial.print( angle_Kp, 4);
-    Serial.print("  I:");
-    Serial.print( angle_Ki, 4);
-    Serial.print("  D:");
-    Serial.print( angle_Kd, 4);
-   Serial.println();
-        }
-   else if( PID_select == 1){ 
- 
-    velocity_Kp = p_pot_value *.01;
-    velocity_Ki = i_pot_value *.01;
-    velocity_Kd = d_pot_value * .001;   // Giữ giá trị Kd nhỏ hơn so với các giá trị khác
-  
-velocity_PID.SetTunings(velocity_Kp,velocity_Ki,velocity_Kd);
-  
-    Serial.print("P:");
-    Serial.print( velocity_Kp, 4);
-    Serial.print("  I:");
-    Serial.print( velocity_Ki, 4);
-    Serial.print("  D:");
-    Serial.print( velocity_Kd, 4);
-    Serial.println();
-   }
-  }
-   timer = 0;   // Đặt lại bộ đếm thời gian
-}
-timer++;  // Tăng bộ đếm thời gian
-}
 
 void init_angle_PID(){
   
@@ -460,17 +357,7 @@ void init_velocity_PID(){
   
 }
 
-void init_left_motor_velocity_PID(){
-  // Khởi tạo các biến liên kết
-// float a;
-  left_motor_velocity_input = 0;
-  left_motor_velocity_setpoint = 0;   // Giá trị mong muốn
-  left_motor_velocity_PID.SetMode(AUTOMATIC);
-  left_motor_velocity_PID.SetSampleTime(4);   // Tính toán PID mỗi 4 ms, mặc định thư viện là 200ms, quá lâu
-  left_motor_velocity_PID.SetOutputLimits(-1000,1000);    // Đặt phạm vi đầu ra của vòng lặp PID
-  set_left_motor_velocity_PID(); // Ghi và đặt giá trị PID vận tốc động cơ trái
-  
-}
+
 
 void imu_setup(){ // Khởi tạo gia tốc kế, con quay hồi chuyển; đặt các bit đúng trên IMU
   Wire.begin(MPU6050);                // Thiết lập IMU làm slave
@@ -559,8 +446,7 @@ if(set_gyro_angles){                                                 //If the IM
     //Complimentary Filter
     angle_pitch = angle_pitch * 0.9996 + acc_angle_pitch * 0.0004;     //Correct the drift of the gyro pitch angle with the accelerometer pitch angle
     angle_roll = angle_roll * 0.9996 + acc_angle_roll * 0.0004;        //Correct the drift of the gyro roll angle with the accelerometer roll angle
-    //angle_pitch = angle_pitch;     
-    //angle_roll = angle_roll;   
+    
   }
   else{                                                                //At first start, set gyro pitch and roll values to gyro values to correct for uneven terrain
     angle_pitch = acc_angle_pitch;                                     //Set the gyro pitch angle equal to the accelerometer pitch angle 
@@ -568,9 +454,6 @@ if(set_gyro_angles){                                                 //If the IM
     set_gyro_angles = true;                                            //Set the IMU started flag
   }
 
-//To dampen the pitch and roll angles another complementary filter is used, MAKES A BIG DIFFERENCE. Plot one line on serial plotter and see, angle_pitch vs angle_pitch_output for example
-//angle_pitch_output = angle_pitch_output * 0.9 + angle_pitch * 0.1;   //Take 90% of the output pitch value and add 10% of the raw pitch value
-//angle_roll_output = angle_roll_output * 0.9 + angle_roll * 0.1;      //Take 90% of the output roll value and add 10% of the raw roll value
 
 angle_pitch_output = angle_pitch; 
 angle_roll_output = angle_roll;  
