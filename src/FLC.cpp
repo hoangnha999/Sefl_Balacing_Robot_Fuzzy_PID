@@ -18,45 +18,8 @@ const int fis_gcR = 7;
 
 FIS_TYPE g_fisInput[fis_gcI];
 FIS_TYPE g_fisOutput[fis_gcO];
+void fis_evaluate();
 
-// Hàm setup chạy một lần khi nhấn nút reset:
-void setup()
-{
-    // Khởi tạo các chân Analog làm đầu vào.
-    // Chế độ chân cho đầu vào: input1
-    pinMode(0 , INPUT);
-
-
-    // Khởi tạo các chân Analog làm đầu ra.
-    // Chế độ chân cho đầu ra: output1
-    pinMode(1 , OUTPUT);
-    // Chế độ chân cho đầu ra: output2
-    pinMode(2 , OUTPUT);
-    // Chế độ chân cho đầu ra: output3
-    pinMode(3 , OUTPUT);
-
-}
-
-// Hàm loop chạy liên tục:
-void loop()
-{
-    // Đọc giá trị đầu vào: input1
-    g_fisInput[0] = analogRead(0);
-
-    g_fisOutput[0] = 0;
-    g_fisOutput[1] = 0;
-    g_fisOutput[2] = 0;
-
-    fis_evaluate();
-
-    // Ghi giá trị đầu ra: output1
-    analogWrite(1 , g_fisOutput[0]);
-    // Ghi giá trị đầu ra: output2
-    analogWrite(2 , g_fisOutput[1]);
-    // Ghi giá trị đầu ra: output3
-    analogWrite(3 , g_fisOutput[2]);
-
-}
 
 //***********************************************************************
 // Các hàm hỗ trợ cho hệ thống suy luận mờ                          
@@ -224,7 +187,7 @@ void fis_evaluate()
     FIS_TYPE* fuzzyOutput[fis_gcO] = { fuzzyOutput0, fuzzyOutput1, fuzzyOutput2, };
     FIS_TYPE fuzzyRules[fis_gcR] = { 0 };
     FIS_TYPE fuzzyFires[fis_gcR] = { 0 };
-    FIS_TYPE* fuzzyRuleSet[] = { fuzzyRules, fuzzyFires };
+    // FIS_TYPE* fuzzyRuleSet[] = { fuzzyRules, fuzzyFires };  // Biến này không được sử dụng
     FIS_TYPE sW = 0;
 
     // Chuyển đổi đầu vào thành đầu vào mờ

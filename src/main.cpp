@@ -8,6 +8,21 @@
 // Được sử dụng để đưa IMU ra khỏi chế độ ngủ
 #define PWR_MGMT_1 0x6B   
 
+// Forward declarations - Khai báo trước các hàm
+void startup();
+void imu_setup();
+void init_angle_PID();
+void init_velocity_PID();
+void gyro_calibration();
+void angle_calc();
+void balance();
+void velocity_calculations();
+void move_profile();
+void motorsOff();
+void leftMotorSpeed(byte dir, int pwm);
+void rightMotorSpeed(byte dir, int pwm);
+void read_MPU6050();   
+
 // BIẾN TOÀN CỤC
 
 long accel_x, accel_y, accel_z, acc_total_vector; // Các giá trị gia tốc
