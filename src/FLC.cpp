@@ -18,7 +18,7 @@ const int fis_gcR = 7;
 
 FIS_TYPE g_fisInput[fis_gcI];
 FIS_TYPE g_fisOutput[fis_gcO];
-void fis_evaluate();
+
 
 
 //***********************************************************************
@@ -187,7 +187,7 @@ void fis_evaluate()
     FIS_TYPE* fuzzyOutput[fis_gcO] = { fuzzyOutput0, fuzzyOutput1, fuzzyOutput2, };
     FIS_TYPE fuzzyRules[fis_gcR] = { 0 };
     FIS_TYPE fuzzyFires[fis_gcR] = { 0 };
-    // FIS_TYPE* fuzzyRuleSet[] = { fuzzyRules, fuzzyFires };  // Biến này không được sử dụng
+     FIS_TYPE* fuzzyRuleSet[] = { fuzzyRules, fuzzyFires };  // Biến này không được sử dụng
     FIS_TYPE sW = 0;
 
     // Chuyển đổi đầu vào thành đầu vào mờ
