@@ -95,7 +95,7 @@ FIS_TYPE fis_gMFI0Coeff6[] = { 0.6667, 0.8333, 1 };
 FIS_TYPE fis_gMFI0Coeff7[] = { 0.8333, 1, 1.167 };
 FIS_TYPE* fis_gMFI0Coeff[] = { fis_gMFI0Coeff1, fis_gMFI0Coeff2, fis_gMFI0Coeff3, fis_gMFI0Coeff4, fis_gMFI0Coeff5, fis_gMFI0Coeff6, fis_gMFI0Coeff7 };
 FIS_TYPE** fis_gMFICoeff[] = { fis_gMFI0Coeff };
-
+//
 // Các hệ số cho hàm thành viên đầu ra
 FIS_TYPE fis_gMFO0Coeff1[] = { 0, 0 };
 FIS_TYPE fis_gMFO0Coeff2[] = { 0, 0.166666666666667 };
